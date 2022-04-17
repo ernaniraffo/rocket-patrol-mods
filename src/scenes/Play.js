@@ -8,7 +8,7 @@ class Play extends Phaser.Scene {
         this.load.image('rocket', './assets/rocket.png');
         this.load.image('spaceship', './assets/spaceship.png');
         this.load.image('starfield', './assets/starfield.png');
-        this.load.spritesheet('explosion', './assets/explosion.png', {frameWidth: 64, frameHeight: 32, startFrame: 0, endFrame: 9});
+        this.load.spritesheet('explosion', './assets/newExplosion.png', {frameWidth: 64, frameHeight: 32, startFrame: 0, endFrame: 8});
         // particles
         this.load.image('dot', './assets/redDot.png');
         this.load.image('jet', './assets/jeyy.png');
@@ -43,7 +43,7 @@ class Play extends Phaser.Scene {
 
         this.anims.create({
             key: 'explode',
-            frames: this.anims.generateFrameNumbers('explosion', {start: 0, end: 9, first: 0}),
+            frames: this.anims.generateFrameNumbers('explosion', {start: 0, end: 8, first: 0}),
             frameRate: 30
         });
 
@@ -77,6 +77,13 @@ class Play extends Phaser.Scene {
             scoreConfig).setOrigin(0.5);
             this.gameOver = true;
         }, null, this);
+
+        this.time.delayedCall(game.settings.gameTimer/2, () => {
+            this.ship01.increaseSpeed();
+            this.ship02.increaseSpeed();
+            this.ship03.increaseSpeed();
+            this.jet.increaseSpeed();
+        }, null, this);
     }
 
     update() {
@@ -103,19 +110,22 @@ class Play extends Phaser.Scene {
         if (this.checkCollision(this.p1Rocket, this.ship03)) {
             this.p1Rocket.reset();
             this.shipExplode(this.ship03);
+            this.clock.elapsed -= 1000; // add time
         }
         if (this.checkCollision(this.p1Rocket, this.ship02)) {
             this.p1Rocket.reset();
             this.shipExplode(this.ship02);
+            this.clock.elapsed -= 3000; // add time
         }
         if (this.checkCollision(this.p1Rocket, this.ship01)) {
             this.p1Rocket.reset();
             this.shipExplode(this.ship01);
+            this.clock.elapsed -= 5000; // add time
         }
         if (this.checkCollision(this.p1Rocket, this.jet)) {
             this.p1Rocket.reset();
             this.shipExplode(this.jet);
-            this.clock.elapsed -= 10000;
+            this.clock.elapsed -= 10000; // add time
         }
 
         if (!this.gameOver) {
@@ -144,24 +154,30 @@ class Play extends Phaser.Scene {
         ship.alpha = 0;
 
         // create explosion sprite and particles
-        let particles = this.add.particles('dot');
-        let emitter = particles.createEmitter();
+        if (ship == this.jet) {
+            let particles = this.add.particles('dot');
+            let emitter = particles.createEmitter();
         
-        emitter.setPosition(ship.x, ship.y);
-        emitter.setSpeed(200);
-        emitter.setBlendMode(Phaser.BlendModes.ADD);
+            emitter.setPosition(ship.x, ship.y);
+            emitter.setSpeed(200);
+            emitter.setBlendMode(Phaser.BlendModes.ADD);
         
-        this.time.delayedCall(500, () => {
+            this.time.delayedCall(500, () => {
             emitter.stop();
-        }, null, this);
-        
-        let boom = this.add.sprite(ship.x, ship.y, 'explosion').setOrigin(0,0);
-        boom.anims.play('explode'); // play explode animation
-        boom.on('animationcomplete', () => {
-            ship.reset();
+            }, null, this);
+
+            ship.reset()
             ship.alpha = 1;
-            boom.destroy();
-        });
+        } else {
+            let boom = this.add.sprite(ship.x, ship.y, 'explosion').setOrigin(0,0);
+            boom.anims.play('explode'); // play explode animation
+            boom.on('animationcomplete', () => {
+                ship.reset();
+                ship.alpha = 1;
+                boom.destroy();
+            });
+        }
+
         // update score
         this.p1Score += ship.points;
         this.scoreLeft.text = this.p1Score;
